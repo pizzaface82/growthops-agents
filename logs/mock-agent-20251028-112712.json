@@ -1,0 +1,29 @@
+{
+  "final_text": "[MOCK RESPONSE] Would have posted 'Post 'Hello from the mock GrowthOps Agent!' to #general.' to #general",
+  "trace": {
+    "start": "2025-10-28T11:27:12.043225",
+    "steps": [
+      {
+        "type": "model_decision",
+        "message": {
+          "content": "Pretend model understood prompt: 'Post 'Hello from the mock GrowthOps Agent!' to #general.'"
+        }
+      },
+      {
+        "type": "tool_results",
+        "results": [
+          {
+            "name": "post_to_slack",
+            "args": {
+              "channel": "#general",
+              "message": "Post 'Hello from the mock GrowthOps Agent!' to #general."
+            },
+            "result": "Would have posted 'Post 'Hello from the mock GrowthOps Agent!' to #general.' to #general"
+          }
+        ]
+      }
+    ],
+    "mode": "offline-sim",
+    "end": "2025-10-28T11:27:12.444190"
+  }
+}
