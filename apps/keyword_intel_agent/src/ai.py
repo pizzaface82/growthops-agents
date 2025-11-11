@@ -36,7 +36,9 @@ def fallback_rules(overlap_df, organic_only_df, paid_only_df) -> str:
 
     # ---- Build lists
     # Wasted spend: overlap with high CPC or high organic potential
-    wasted = ovr.sort_values([ovr_cpc, ovr_pot], ascending=[False, False]).head(5)
+    rb = "reduce_bid_flag" if "reduce_bid_flag" in ovr.columns else ovr_pot
+    wasted = ovr.sort_values([rb, ovr_cpc, ovr_pot], ascending=[False, False, False]).head(5)
+
 
     # Gaps to bid: organic-only with biggest impressions
     gaps = org.sort_values(org_impr, ascending=False).head(5)
