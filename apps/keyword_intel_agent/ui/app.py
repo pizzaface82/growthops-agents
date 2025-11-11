@@ -65,7 +65,7 @@ with st.sidebar:
         help="Not wired yet — placeholder for future ingestion."
     )
 
-    run = st.button("Run analysis", type="primary", use_container_width=True)
+    run = st.button("Run analysis", type="primary", width="stretch")
 
 # ---------- Pipeline ----------
 if run:
@@ -105,38 +105,56 @@ if run:
             st.info("No overlap found. Try fuzzy matching or adjust threshold.")
         else:
             tidy = tidy_columns_for_display(overlap)
-            st.dataframe(tidy, use_container_width=True, height=420)
+            st.dataframe(tidy, width="stretch", height=420)
             st.download_button(
                 "Download Overlap CSV",
                 df_bytes(tidy),
                 "overlap.csv",
                 "text/csv",
-                use_container_width=True
+                width="stretch"
             )
 
     with tab2:
         st.subheader("Organic-Only (opportunities to test in Ads)")
         tidy = tidy_columns_for_display(organic_only)
-        st.dataframe(tidy, use_container_width=True, height=420)
+        st.dataframe(tidy, width="stretch", height=420)
         st.download_button(
             "Download Organic-Only CSV",
             df_bytes(tidy),
             "organic_only.csv",
             "text/csv",
-            use_container_width=True
+            width="stretch"
         )
 
     with tab3:
         st.subheader("Paid-Only (ads without organic presence)")
         tidy = tidy_columns_for_display(paid_only)
-        st.dataframe(tidy, use_container_width=True, height=420)
+        st.dataframe(tidy, width="stretch", height=420)
         st.download_button(
             "Download Paid-Only CSV",
             df_bytes(tidy),
             "paid_only.csv",
             "text/csv",
-            use_container_width=True
+            width="stretch"
         )
 
     with tab4:
-        st.subhe
+        st.subheader("Recommendations")
+        md = fallback_rules(overlap, organic_only, paid_only)
+        st.markdown(md)
+        st.download_button(
+            "Download recommendations.md",
+            md.encode("utf-8"),
+            "recommendations.md",
+            "text/markdown",
+            width="stretch"
+        )
+
+# ---------- Help ----------
+with st.expander("What’s happening under the hood"):
+    st.markdown("""
+- **pandas** loads CSVs, normalizes keywords → `kw_norm`
+- **Join** on `kw_norm` (exact) or via **RapidFuzz** mapping (fuzzy)
+- **Signals** on Overlap: expected CTR → CTR gap → `organic_potential`; flags for CPC/rank
+- **Output**: 3 tables + actionable Markdown summary
+""")
