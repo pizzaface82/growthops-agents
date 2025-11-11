@@ -1,6 +1,17 @@
-.venv/
+﻿# Secrets & data
+.env
+*.csv
+*.json
+
+# Python
 __pycache__/
 *.pyc
+.venv/
+venv/
+
+# Editors
+.vscode/
+
+# Streamlit & workflow exports
 .streamlit/
-.env
-.DS_Store
+workflows/*.tmp
