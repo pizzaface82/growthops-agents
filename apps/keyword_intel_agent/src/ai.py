@@ -25,9 +25,11 @@ def _coerce_bool_to_int_if_needed(df: pd.DataFrame, col: str) -> None:
             # Be permissive; if coercion fails we leave the column as-is.
             pass
 
-def fallback_rules(overlap_df: pd.DataFrame | None,
-                   organic_only_df: pd.DataFrame | None,
-                   paid_only_df: pd.DataFrame | None) -> str:
+def fallback_rules(
+    overlap_df: pd.DataFrame | None,
+    organic_only_df: pd.DataFrame | None,
+    paid_only_df: pd.DataFrame | None
+) -> str:
     """
     Build a lightweight Markdown recommendation summary when LLM/API mode
     is disabled. Uses safe column resolution so schema changes won't crash.
@@ -64,25 +66,28 @@ def fallback_rules(overlap_df: pd.DataFrame | None,
     _coerce_bool_to_int_if_needed(ovr, "reduce_bid_flag")
 
     # Assemble sort columns defensively (all are strings with column names)
-    sort_cols = [rb]
+    sort_cols: list[str] = [rb]
     for c in (ovr_cpc, ovr_pot):
         if isinstance(c, str) and c in ovr.columns:
             sort_cols.append(c)
 
-    wasted = (
-        ovr.sort_values(
-            sort_cols,
-            ascending=[False] * len(sort_cols),
-            na_position="last"
-        ).head(5)
-        if not ovr.empty else ovr
-    )
+    if not ovr.empty:
+        wasted = (
+            ovr.sort_values(
+                sort_cols,
+                ascending=[False] * len(sort_cols),
+                na_position="last"
+            )
+            .head(5)
+        )
+    else:
+        wasted = ovr  # empty
 
     # Gaps to bid: organic-only with biggest impressions
-    gaps = (
-        org.sort_values(org_impr, ascending=False, na_position="last").head(5)
-        if not org.empty else org
-    )
+    if not org.empty:
+        gaps = org.sort_values(org_impr, ascending=False, na_position="last").head(5)
+    else:
+        gaps = org  # empty
 
     # ---- Markdown
     lines: list[str] = []
@@ -106,4 +111,13 @@ def fallback_rules(overlap_df: pd.DataFrame | None,
     else:
         for _, r in gaps.iterrows():
             q = r.get(org_query) or "n/a"
-            imp = r.get(
+            imp = r.get(org_impr, 0)
+            lines.append(f"- `{q}` — ~{imp} impressions and no paid coverage. Test exact/phrase.")
+
+    # Actions
+    lines.append("\n**3 actions (next 7 days)**")
+    lines.append("- Reduce bids 10–25% on overlap where CPC is high and organic ranks ≤3.")
+    lines.append("- Launch ads for top organic-only queries (≥300 weekly impressions).")
+    lines.append("- Track CTR vs expected CTR; fix ≥5-point deficits with titles/meta & sitelinks.")
+
+    return "\n".join(lines)
