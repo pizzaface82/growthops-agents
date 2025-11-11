@@ -1,51 +1,42 @@
 import os
 from dotenv import load_dotenv, find_dotenv
-
 load_dotenv(find_dotenv(), override=True)
 
-SYSTEM = """You are a concise marketing analyst.
-Summarize metrics into: Top 3 Wins, Top 3 Risks, and 3 Actionable Recommendations.
-Be specific, reference metrics, keep it under 180 words."""
+SYSTEM = """You are a marketing analyst. Compare today's KPIs to yesterday and explain
+what changed and why. Output three sections:
+1) Top 3 Wins, 2) Top 3 Risks, 3) 3 Recommended Actions.
+Reference % changes and channels/products when relevant. Keep under 180 words."""
 
-def summarize(ga4: dict, shopify: dict) -> str:
-    # MOCK mode: if no key, return canned text so you can run end-to-end without APIs
+def summarize(ga4_today: dict, ga4_yday: dict, channels, products) -> str:
     key = os.getenv("OPENAI_API_KEY", "").strip()
-    if not key:
-        return (
-            "Top 3 Wins:\n"
-            "• Revenue +5% DoD\n• AOV stable\n• Purchases steady\n\n"
-            "Top 3 Risks:\n"
-            "• Sessions down\n• New users flat\n• Conv. rate soft\n\n"
-            "Recommended Actions:\n"
-            "• +10% retargeting budget\n• QA top landing pages\n• Launch one promo test"
-        )
-
-    # Import on-demand so MOCK mode doesn't require the package
-    from openai import OpenAI
-    client = OpenAI(api_key=key)
-
+    # Minimal text tables for the model:
+    ch_txt = channels.to_string(index=False)
+    pr_txt = products.to_string(index=False)
     content = (
-        f"GA4: users={ga4['users']}, active={ga4['active_users']}, "
-        f"sessions={ga4['sessions']}, purchases={ga4['purchases']}, "
-        f"revenue={ga4['revenue']}\n"
-        f"Shopify: orders={shopify['orders']}, revenue={shopify['revenue']}, aov={shopify['aov']}"
+        f"Today: {ga4_today}\nYesterday: {ga4_yday}\n\n"
+        f"Channels:\n{ch_txt}\n\nTop Products by Channel:\n{pr_txt}"
     )
 
-    # Try Responses API first (modern), fall back to Chat Completions if needed
+    if not key:
+        # Mock summary if no key
+        return (
+            "Wins: Revenue +6.0% DoD; Paid drives most lift; Email CVR strong.\n"
+            "Risks: Organic soft; sessions quality mixed; purchases up but CVR flat.\n"
+            "Actions: +10% Paid retargeting; refresh top organic landing pages; test email promo."
+        )
+
+    from openai import OpenAI
+    client = OpenAI(api_key=key)
     try:
         resp = client.responses.create(
             model="gpt-4.1-mini",
             input=content,
-            instructions=SYSTEM,  # <— use 'instructions' (not 'system')
+            instructions=SYSTEM,
         )
         return resp.output_text
     except TypeError:
-        # Older client – use Chat Completions
         chat = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": SYSTEM},
-                {"role": "user", "content": content},
-            ],
+            messages=[{"role":"system","content":SYSTEM},{"role":"user","content":content}],
         )
         return chat.choices[0].message.content

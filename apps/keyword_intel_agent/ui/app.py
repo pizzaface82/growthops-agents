@@ -40,6 +40,10 @@ def kpis(overlap, organic_only, paid_only):
     c2.metric("Organic-only (gaps)", len(organic_only))
     c3.metric("Paid-only (review)", len(paid_only))
 
+# ---------- Title ----------
+st.title("🔎 SEO ↔ SEM Keyword Intelligence Agent")
+st.caption("Compare GSC and Google Ads to find overlap, gaps, and wasted spend. Export weekly recommendations.")
+
 # ---------- Sidebar ----------
 with st.sidebar:
     st.header("Inputs")
@@ -51,17 +55,17 @@ with st.sidebar:
     st.header("Matching")
     st.session_state.fuzzy = st.checkbox("Enable fuzzy matching", value=st.session_state.fuzzy)
     st.session_state.threshold = st.slider("Fuzzy threshold", 70, 100, st.session_state.threshold, 1)
+    st.caption("Tip: Start exact, then try fuzzy ~90 for variant mapping.")
 
     st.divider()
     st.header("API mode (placeholder)")
-    st.session_state.api_mode = st.checkbox("Use API mode (GA4/Ads connectors)", value=st.session_state.api_mode,
-                                            help="Not wired yet — placeholder for future ingestion.")
+    st.session_state.api_mode = st.checkbox(
+        "Use API mode (GA4/Ads connectors)",
+        value=st.session_state.api_mode,
+        help="Not wired yet — placeholder for future ingestion."
+    )
 
     run = st.button("Run analysis", type="primary", use_container_width=True)
-
-# ---------- Title ----------
-st.title("🔎 SEO ↔ SEM Keyword Intelligence Agent")
-st.caption("Compare GSC and Google Ads to find overlap, gaps, and wasted spend. Export weekly recommendations.")
 
 # ---------- Pipeline ----------
 if run:
@@ -78,7 +82,11 @@ if run:
 
     # Normalize + join
     gsc_df, ads_df = add_kw_norm_cols(gsc_df, ads_df)
-    seg = compute_overlap_segments(gsc_df, ads_df, fuzzy=st.session_state.fuzzy, threshold=st.session_state.threshold)
+    seg = compute_overlap_segments(
+        gsc_df, ads_df,
+        fuzzy=st.session_state.fuzzy,
+        threshold=st.session_state.threshold
+    )
     overlap = seg["overlap"]
     organic_only = seg["organic_only"]
     paid_only = seg["paid_only"]
@@ -98,31 +106,37 @@ if run:
         else:
             tidy = tidy_columns_for_display(overlap)
             st.dataframe(tidy, use_container_width=True, height=420)
-            st.download_button("Download Overlap CSV", df_bytes(tidy), "overlap.csv", "text/csv", use_container_width=True)
+            st.download_button(
+                "Download Overlap CSV",
+                df_bytes(tidy),
+                "overlap.csv",
+                "text/csv",
+                use_container_width=True
+            )
 
     with tab2:
         st.subheader("Organic-Only (opportunities to test in Ads)")
         tidy = tidy_columns_for_display(organic_only)
         st.dataframe(tidy, use_container_width=True, height=420)
-        st.download_button("Download Organic-Only CSV", df_bytes(tidy), "organic_only.csv", "text/csv", use_container_width=True)
+        st.download_button(
+            "Download Organic-Only CSV",
+            df_bytes(tidy),
+            "organic_only.csv",
+            "text/csv",
+            use_container_width=True
+        )
 
     with tab3:
         st.subheader("Paid-Only (ads without organic presence)")
         tidy = tidy_columns_for_display(paid_only)
         st.dataframe(tidy, use_container_width=True, height=420)
-        st.download_button("Download Paid-Only CSV", df_bytes(tidy), "paid_only.csv", "text/csv", use_container_width=True)
+        st.download_button(
+            "Download Paid-Only CSV",
+            df_bytes(tidy),
+            "paid_only.csv",
+            "text/csv",
+            use_container_width=True
+        )
 
     with tab4:
-        st.subheader("Recommendations")
-        md = fallback_rules(overlap, organic_only, paid_only)
-        st.markdown(md)
-        st.download_button("Download recommendations.md", md.encode("utf-8"), "recommendations.md", "text/markdown", use_container_width=True)
-
-# Help expander
-with st.expander("What’s happening under the hood"):
-    st.markdown("""
-- **pandas** loads CSVs, normalizes keywords → `kw_norm`
-- **Join** on `kw_norm` (exact) or via **RapidFuzz** mapping (fuzzy)
-- **Signals** on Overlap: expected CTR → CTR gap → `organic_potential`; flags for CPC/rank
-- **Output**: 3 tables + actionable Markdown summary
-""")
+        st.subhe
