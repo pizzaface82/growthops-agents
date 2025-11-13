@@ -37,8 +37,8 @@ def df_bytes(df: pd.DataFrame) -> bytes:
 def kpis(overlap, organic_only, paid_only):
     c1, c2, c3 = st.columns(3)
     c1.metric("Overlap (kw)", len(overlap))
-    c2.metric("Organic-only (gaps)", len(organic_only))
-    c3.metric("Paid-only (review)", len(paid_only))
+    c2.metric("Organic-Only (gaps)", len(organic_only))
+    c3.metric("Paid-Only (review)", len(paid_only))
 
 # ---------- Title ----------
 st.title("🔎 SEO ↔ SEM Keyword Intelligence Agent")
