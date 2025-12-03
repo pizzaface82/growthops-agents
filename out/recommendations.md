@@ -8,8 +8,9 @@
 **Top 5 gaps to bid on**
 - `discount running shoes men` — ~1400.0 impressions and no paid coverage. Test exact/phrase.
 - `trail walking shoes women` — ~1200.0 impressions and no paid coverage. Test exact/phrase.
+- `womens trail running shoes` — ~500.0 impressions and no paid coverage. Test exact/phrase.
 
-**3 actions (7 days)**
+**3 actions (next 7 days)**
 - Reduce bids 10–25% on overlap where CPC is high and organic ranks ≤3.
 - Launch ads for top organic-only queries (≥300 weekly impressions).
 - Track CTR vs expected CTR; fix ≥5-point deficits with titles/meta & sitelinks.

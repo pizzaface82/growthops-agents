@@ -32,6 +32,22 @@ def add_kw_norm_cols(gsc: pd.DataFrame, ads: pd.DataFrame):
 # -----------------------------------------------------------------------------
 def compute_overlap_segments(gsc: pd.DataFrame, ads: pd.DataFrame, fuzzy=False, threshold=90):
     """Return dict with overlap, organic_only, paid_only DataFrames."""
+
+    # ------------------------------------------------------------------
+    # NEW: Always guarantee normalized keyword columns exist
+    # ------------------------------------------------------------------
+    gsc = gsc.copy()
+    ads = ads.copy()
+
+    if "kw_norm" not in gsc.columns:
+        gsc["kw_norm"] = gsc["query"].astype(str).map(normalize_kw)
+
+    if "kw_norm" not in ads.columns:
+        ads["kw_norm"] = ads["keyword"].astype(str).map(normalize_kw)
+
+    # ------------------------------------------------------------------
+    # Exact matching path
+    # ------------------------------------------------------------------
     if not fuzzy:
         merged = pd.merge(
             gsc, ads,
@@ -39,28 +55,38 @@ def compute_overlap_segments(gsc: pd.DataFrame, ads: pd.DataFrame, fuzzy=False, 
             suffixes=("_gsc", "_ads"),
             indicator=True
         )
-    else:
-        # Safe suffixing avoids duplicate columns
-        g = gsc.copy().add_suffix("_gsc")
-        a = ads.copy().add_suffix("_ads")
 
-        # Fuzzy map
+    else:
+        # ------------------------------------------------------------------
+        # Fuzzy matching path — suffix everything safely
+        # ------------------------------------------------------------------
+        g = gsc.add_suffix("_gsc").copy()
+        a = ads.add_suffix("_ads").copy()
+
+        # Fuzzy match lists
         left = g["kw_norm_gsc"].drop_duplicates().tolist()
         right = a["kw_norm_ads"].drop_duplicates().tolist()
+
         pairs = []
         for kw in left:
             match = process.extractOne(kw, right, scorer=fuzz.token_sort_ratio)
             if match and match[1] >= threshold:
                 pairs.append((kw, match[0]))
+
         map_df = pd.DataFrame(pairs, columns=["kw_norm_gsc", "kw_norm_ads"])
 
+        # Stitch fuzzy pairs
         merged = g.merge(map_df, on="kw_norm_gsc", how="left")
         merged = merged.merge(a, on="kw_norm_ads", how="outer", indicator=True)
+
+        # Final canonical normalized keyword
         merged["kw_norm"] = merged["kw_norm_gsc"].fillna(merged["kw_norm_ads"])
 
+    # Segment splits
     overlap = merged[merged["_merge"] == "both"].copy()
     organic_only = merged[merged["_merge"] == "left_only"].copy()
     paid_only = merged[merged["_merge"] == "right_only"].copy()
+
     return {"overlap": overlap, "organic_only": organic_only, "paid_only": paid_only}
 
 
@@ -83,6 +109,7 @@ def roi_signals(overlap: pd.DataFrame) -> pd.DataFrame:
         ("clicks_gsc",  ["clicks_gsc", "clicks_x", "clicks"]),
         ("clicks_ads",  ["clicks_ads", "clicks_y"]),
     ]
+
     for target, cands in alias_map:
         if target not in df.columns:
             for c in cands:
