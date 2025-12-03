@@ -1,7 +1,9 @@
 ﻿# Secrets & data
 .env
 *.csv
+# Ignore general JSON except workflows
 *.json
+!workflows/*.json
 
 # Python
 __pycache__/
